@@ -1,21 +1,47 @@
+import logging
 import os
-from azure.servicebus import ServiceBusClient
+from threading import Thread
+
+from server.server import SensorServer
+from setting.setting import server_setting, setting_setup
+from azure.receive_subscription import consume_service_bus
 
 
-CONNECTION_STR = os.environ['SERVICEBUS_CONNECTION_STR']
-TOPIC_NAME = os.environ["SERVICEBUS_TOPIC_NAME"]
-SUBSCRIPTION_NAME = os.environ["SERVICEBUS_SUBSCRIPTION_NAME"]
+def run() -> None:
+    sensor_readings = []
 
-servicebus_client = ServiceBusClient.from_connection_string(conn_str=CONNECTION_STR)
-with servicebus_client:
-    receiver = servicebus_client.get_subscription_receiver(
-        topic_name=TOPIC_NAME,
-        subscription_name=SUBSCRIPTION_NAME
+    setting_setup()
+
+    logging.basicConfig(level=logging.INFO)
+
+    server = SensorServer(
+        server_setting.host_name,
+        server_setting.port,
+        sensor_readings,
     )
-    with receiver:
-        received_msgs = receiver.receive_messages(max_message_count=10, max_wait_time=100)
-        for msg in received_msgs:
-            print(str(msg))
-            receiver.complete_message(msg)
 
-print("Receive is done.")
+    logging.info(
+        "Server started at http://%s:%s"
+        % (server_setting.host_name, str(server_setting.port))
+    )
+
+    try:
+        thread = Thread(target=server.start)
+        thread.start()
+    except KeyboardInterrupt:
+        server.close()
+        logging.info("Server stopped")
+
+    try:
+        consume_service_bus(
+            connection_str=os.environ["SERVICEBUS_CONNECTION_STR"],
+            topic_name=os.environ["SERVICEBUS_TOPIC_NAME"],
+            subscription_name=os.environ["SERVICEBUS_SUBSCRIPTION_NAME"],
+            sensor_readings=sensor_readings,
+        )
+    except Exception:
+        logging.error("Couldn't consume messages from the service bus")
+
+
+if __name__ == "__main__":
+    run()
