@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-receiver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-receiver
+  template:
+    metadata:
+      labels:
+        app: event-receiver
+    spec:
+      containers:
+        - name: event-receiver
+          image: groupassignmentregistry.azurecr.io/event-reciver:v1
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082
+          resources:
+            #cpu and memory limit
+            limits:
+              memory: "550Mi"
+              cpu: "500m"
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-receiver
+spec:
+  type: ClusterIP
+  selector:
+    app: event-receiver
+  ports:
+    - port: 8080
+
+---
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: event-receiver
+  annotations:
+    kubernetes.io/ingress.class: addon-http-application-routing
+    appgw.ingress.kubernetes.io/use-private-ip: "false"
+spec:
+  rules:
+    - host: event-receiver.1ebc354abe5745168776.ukwest.aksapp.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: event-receiver
+                port:
+                  number: 8080
