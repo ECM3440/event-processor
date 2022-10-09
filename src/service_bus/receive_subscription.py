@@ -1,7 +1,6 @@
 import json
 import logging
 from typing import Any, Dict, List
-
 from azure.servicebus import ServiceBusClient
 
 

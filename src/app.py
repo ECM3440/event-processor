@@ -4,7 +4,7 @@ from threading import Thread
 
 from server.server import SensorServer
 from setting.setting import server_setting, setting_setup
-from azure.receive_subscription import consume_service_bus
+from service_bus.receive_subscription import consume_service_bus
 
 
 def run() -> None:
