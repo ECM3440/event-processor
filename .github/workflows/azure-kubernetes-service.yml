@@ -58,7 +58,7 @@ jobs:
       # Builds and pushes an image up to your Azure Container Registry
       - name: Build and push image to ACR
         run: |
-          az acr build --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:v1 --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.RESOURCE_GROUP }}  .
+          az acr build --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:v1 --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.RESOURCE_GROUP }} --build-arg SERVICEBUS_CONNECTION_STR=${{ secrets.SERVICEBUS_CONNECTION_STR }} --build-arg SERVICEBUS_TOPIC_NAME=${{ secrets.SERVICEBUS_TOPIC_NAME }} --build-arg SERVICEBUS_SUBSCRIPTION_NAME=${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }} .
 
   createSecret:
     permissions:
