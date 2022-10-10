@@ -10,10 +10,14 @@ def consume_service_bus(
     subscription_name: str,
     sensor_readings: List[Dict[str, Any]],
 ) -> None:
-    logging.info(connection_str)
-    logging.info(topic_name)
-    logging.info(subscription_name)
-    logging.info(sensor_readings)
+    if connection_str == "":
+        raise Exception("connection_str is not set")
+    if topic_name == "":
+        raise Exception("topic_name is not set")
+    if subscription_name == "":
+        raise Exception("subscription_name is not set")
+    if sensor_readings is None:
+        raise Exception("sensor_readings is not set")
     try:
         servicebus_client = ServiceBusClient.from_connection_string(
             conn_str=connection_str
