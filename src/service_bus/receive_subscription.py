@@ -10,6 +10,10 @@ def consume_service_bus(
     subscription_name: str,
     sensor_readings: List[Dict[str, Any]],
 ) -> None:
+    logging.info(connection_str)
+    logging.info(topic_name)
+    logging.info(subscription_name)
+    logging.info(sensor_readings)
     try:
         servicebus_client = ServiceBusClient.from_connection_string(
             conn_str=connection_str
