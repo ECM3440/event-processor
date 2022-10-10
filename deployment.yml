@@ -17,7 +17,7 @@ spec:
           image: groupassignmentregistry.azurecr.io/event-receiver:v1
           imagePullPolicy: Always
           ports:
-            - containerPort: 8082
+            - containerPort: 8080
           resources:
             #cpu and memory limit
             limits:
