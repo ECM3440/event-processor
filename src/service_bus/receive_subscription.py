@@ -44,4 +44,4 @@ def consume_service_bus(
                     b"iothub-enqueuedtime"
                 ].decode()
                 sensor_readings.append(nmsg)
-                # receiver.complete_message(msg)
+                receiver.complete_message(msg)
