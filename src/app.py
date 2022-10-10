@@ -1,3 +1,4 @@
+from ast import parse
 import logging
 import os
 import argparse
@@ -15,17 +16,20 @@ def run() -> None:
         nargs=1,
         help="--profile can either be 'dev' or 'prod'",
         default="dev",
+        type=str,
     )
     args = parser.parse_args()
 
     if "profile" not in args:
         raise Exception("profile flag must be set")
 
-    if args.profile != ("dev" or "prod"):
-        raise Exception("profile flag must either be 'dev' or 'prod'")
+    parsed_profile = args.profile.pop()
 
-    profile = args.profile
-    setting_setup(profile)
+    if parsed_profile != "dev":
+        if parsed_profile != "prod":
+            raise Exception("profile flag must either be 'dev' or 'prod'")
+
+    setting_setup(parsed_profile)
 
     sensor_readings = []
 
