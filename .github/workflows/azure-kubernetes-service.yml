@@ -52,7 +52,8 @@ jobs:
         uses: azure/docker-login@v1
         with:
           login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Set variables
         run: echo "BUILD_DATE=$(date +%s)" >> $GITHUB_ENV
       - name: Build and push image
