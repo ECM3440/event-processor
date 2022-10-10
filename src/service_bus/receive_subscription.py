@@ -40,8 +40,5 @@ def consume_service_bus(
                 nmsg["device_id"] = msg.application_properties[
                     b"iothub-connection-device-id"
                 ].decode()
-                nmsg["time"] = msg.application_properties[
-                    b"iothub-enqueuedtime"
-                ].decode()
                 sensor_readings.append(nmsg)
                 receiver.complete_message(msg)
