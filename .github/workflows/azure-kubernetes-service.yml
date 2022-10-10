@@ -52,7 +52,7 @@ jobs:
         uses: azure/login-action@v1
         with:
           login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-          creds: ${{ secrets/AZURE_CREDENTIALS }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Set variables
         run: echo "BUILD_DATE=$(date +%s)" >> $GITHUB_ENV
       - name: Build and push image
