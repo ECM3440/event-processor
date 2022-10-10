@@ -46,19 +46,19 @@ jobs:
       id-token: write
     runs-on: ubuntu-latest
     steps:
-      # Checks out the repository this file is in
-      - uses: actions/checkout@v3
-
-      # Logs in with your Azure credentials
-      - name: Azure login
-        uses: azure/login@v1.4.3
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Login to Docker Hub
+        uses: azure/login-action@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      # Builds and pushes an image up to your Azure Container Registry
-      - name: Build and push image to ACR
+          login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          creds: ${{ secrets/AZURE_CREDENTIALS }}
+      - name: Set variables
+        run: echo "BUILD_DATE=$(date +%s)" >> $GITHUB_ENV
+      - name: Build and push image
         run: |
-          az acr build --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:v1 --registry ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.RESOURCE_GROUP }} . --build-arg SERVICEBUS_CONNECTION_STR="${{ secrets.SERVICEBUS_CONNECTION_STR }}" --build-arg SERVICEBUS_TOPIC_NAME="${{ secrets.SERVICEBUS_TOPIC_NAME }}" --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}"
+          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/event-receiver:v1 --build-arg SERVICEBUS_CONNECTION_STR="${{ secrets.SERVICEBUS_CONNECTION_STR }}" --build-arg SERVICEBUS_TOPIC_NAME="${{ secrets.SERVICEBUS_TOPIC_NAME }}" --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}"
+          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/event-receiver:v1
 
   createSecret:
     permissions:
