@@ -1,16 +1,37 @@
+from ast import parse
 import logging
 import os
+import argparse
 from threading import Thread
 
 from server.server import SensorServer
 from setting.setting import server_setting, setting_setup
-from azure.receive_subscription import consume_service_bus
+from service_bus.receive_subscription import consume_service_bus
 
 
 def run() -> None:
-    sensor_readings = []
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--profile",
+        nargs=1,
+        help="--profile can either be 'dev' or 'prod'",
+        default="dev",
+        type=str,
+    )
+    args = parser.parse_args()
 
-    setting_setup()
+    if "profile" not in args:
+        raise Exception("profile flag must be set")
+
+    parsed_profile = args.profile.pop()
+
+    if parsed_profile != "dev":
+        if parsed_profile != "prod":
+            raise Exception("profile flag must either be 'dev' or 'prod'")
+
+    setting_setup(parsed_profile)
+
+    sensor_readings = []
 
     logging.basicConfig(level=logging.INFO)
 

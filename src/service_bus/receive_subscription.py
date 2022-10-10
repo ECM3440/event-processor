@@ -1,7 +1,6 @@
 import json
 import logging
 from typing import Any, Dict, List
-
 from azure.servicebus import ServiceBusClient
 
 
@@ -11,6 +10,14 @@ def consume_service_bus(
     subscription_name: str,
     sensor_readings: List[Dict[str, Any]],
 ) -> None:
+    if connection_str == "":
+        raise Exception("connection_str is not set")
+    if topic_name == "":
+        raise Exception("topic_name is not set")
+    if subscription_name == "":
+        raise Exception("subscription_name is not set")
+    if sensor_readings is None:
+        raise Exception("sensor_readings is not set")
     try:
         servicebus_client = ServiceBusClient.from_connection_string(
             conn_str=connection_str
