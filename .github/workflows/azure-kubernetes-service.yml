@@ -28,15 +28,17 @@
 name: Build and deploy an app to AKS
 
 on:
-  push:
+  pull_request:
+    branches:
+    - main
   workflow_dispatch:
 
 env:
-  AZURE_CONTAINER_REGISTRY: "groupassignmentregistry"
+  AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
   CONTAINER_NAME: "event-receiver"
-  RESOURCE_GROUP: "ECM3440"
-  CLUSTER_NAME: "groupassignmentaks"
-  IMAGE_PULL_SECRET_NAME: "pullsecret"
+  RESOURCE_GROUP: ${{ secrets.RESOURCE_GROUP }}
+  CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+  IMAGE_PULL_SECRET_NAME: ${{ secrets.IMAGE_PULL_SECRET_NAME }}
   DEPLOYMENT_MANIFEST_PATH: "deployment.yml"
 
 jobs:
