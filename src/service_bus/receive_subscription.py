@@ -37,8 +37,5 @@ def consume_service_bus(
             for msg in received_msgs:
                 logging.info("message received: {}".format(str(msg)))
                 nmsg = json.loads(str(msg))
-                nmsg["device_id"] = msg.application_properties[
-                    b"iothub-connection-device-id"
-                ].decode()
                 sensor_readings.append(nmsg)
-                # receiver.complete_message(msg)
+                receiver.complete_message(msg)
