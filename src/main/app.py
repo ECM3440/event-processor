@@ -1,4 +1,3 @@
-from ast import parse
 import logging
 import os
 import argparse

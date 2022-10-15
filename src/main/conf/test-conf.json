@@ -1,0 +1,6 @@
+{
+    "server": {
+        "host_name": "localhost",
+        "port": 8082
+    }
+}
