@@ -58,6 +58,7 @@ jobs:
         run: |
           pip install pytest
           pip install pytest-cov
+          pip install mock
           pytest --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
 
   buildImage:
