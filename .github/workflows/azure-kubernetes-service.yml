@@ -59,7 +59,7 @@ jobs:
           pip install pytest
           pip install pytest-cov
           pip install mock
-          pytest --junitxml=test-results-${{ github.sha }}.xml --exitfirst --verbose --failed-first --cov=. --cov-report xml
+          python -m pytest --junitxml=test-results-${{ github.sha }}.xml --exitfirst --verbose --failed-first --cov=. --cov-report xml
 
       - name: Upload pytest test results
         uses: actions/upload-artifact@v3
