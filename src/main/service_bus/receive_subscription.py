@@ -22,7 +22,6 @@ def consume_service_bus(
         servicebus_client = ServiceBusClient.from_connection_string(
             conn_str=connection_str
         )
-        print(servicebus_client.connection_str)
     except Exception as e:
         logging.error(e)
         return
@@ -30,7 +29,6 @@ def consume_service_bus(
     logging.info("Consuming events")
 
     with servicebus_client:
-        print("hellooo")
         receiver = servicebus_client.get_subscription_receiver(
             topic_name=topic_name, subscription_name=subscription_name
         )

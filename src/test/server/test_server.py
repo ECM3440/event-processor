@@ -20,8 +20,6 @@ def test_server():
 
     response_json = response.json()
 
-    print(response_json)
-
     time_key = list(response_json[0].keys())[0]
     assert time_key == "test_time"
     assert response_json[0][time_key] == {"sensor": 18}

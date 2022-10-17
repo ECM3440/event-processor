@@ -20,12 +20,10 @@ class MockServiceBusClient:
 
     @classmethod
     def from_connection_string(conn_str: str):
-        print("eyyy")
         MockServiceBusClient.connection_str = conn_str
         return MockServiceBusClient()
 
     def get_subscription_receiver(topic_name: str, subscription_name: str):
-        print("oii")
         return MockServiceBusReceiver()
 
 
