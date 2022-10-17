@@ -59,13 +59,22 @@ jobs:
           pip install pytest
           pip install pytest-cov
           pip install mock
-          pytest --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+          pytest --doctest-modules --junitxml=junit/test-results-${{ github.sha }}.xml --cov=com --cov-report=xml --cov-report=html
+          - name: Test with pytest
+      - name: Upload pytest test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: pytest-results-${{ github.sha }}
+          path: junit/test-results-${{ github.sha }}.xml
+        # Use always() to always run this step to publish test results when there are test failures
+        if: ${{ always() }}
 
   buildImage:
     permissions:
       contents: read
       id-token: write
     runs-on: ubuntu-latest
+    needs: runTests
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -87,6 +96,7 @@ jobs:
       contents: read
       id-token: write
     runs-on: ubuntu-latest
+    needs: runTests
     steps:
       # Logs in with your Azure credentials
       - name: Azure login
