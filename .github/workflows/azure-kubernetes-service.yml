@@ -59,15 +59,21 @@ jobs:
           pip install pytest
           pip install pytest-cov
           pip install mock
-          pytest --doctest-modules --junitxml=junit/test-results-${{ github.sha }}.xml --cov=. --cov-report=xml --cov-report=html
+          pytest --junitxml=test-results-${{ github.sha }}.xml --cov=. --cov-report=term-missing:skip-covered:xml --cov-report=html
           - name: Test with pytest
+
       - name: Upload pytest test results
         uses: actions/upload-artifact@v3
         with:
           name: pytest-results-${{ github.sha }}
-          path: junit/test-results-${{ github.sha }}.xml
+          path: test-results-${{ github.sha }}.xml
         # Use always() to always run this step to publish test results when there are test failures
         if: ${{ always() }}
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          junitxml-path: ./test-results-${{ github.sha }}.xml
 
   buildImage:
     permissions:
