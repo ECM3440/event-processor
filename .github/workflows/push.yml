@@ -172,6 +172,6 @@ jobs:
         with:
           manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
           images: |
-            ${{ needs.build.outputs.imageRepository }}:${{ needs.build.outputs.imageTag }}
+            groupassignmentregistry.azurecr.io/ecm3440/event-processor:${{ needs.build.outputs.imageTag }}
           imagepullsecrets: |
             ${{ env.IMAGE_PULL_SECRET_NAME }}

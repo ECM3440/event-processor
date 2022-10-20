@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: ${SERVICE_NAME}
-          image: ${IMAGE_REPOSITORY}:${IMAGE_TAG}
+          image: groupassignmentregistry.azurecr.io/ecm3440/event-processor:${IMAGE_TAG}
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
