@@ -46,7 +46,7 @@ jobs:
         id: image_repository_op
         run: |
           echo IMAGE_REPOSITORY=$(echo ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
-          echo image_repository=${{ secrets.REGISTRY_LOGIN_SERVER }} >> $GITHUB_OUTPUT
+          echo "image_repository=$IMAGE_REPOSITORY" >> $GITHUB_OUTPUT
 
       - name: Build and push image
         run: |
