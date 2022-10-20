@@ -43,7 +43,6 @@ jobs:
             --build-arg SERVICEBUS_TOPIC_NAME="${{ secrets.SERVICEBUS_TOPIC_NAME }}" \
             --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}" \
             --label org.opencontainers.image.source=${{ github.event.repository.clone_url }} \
-            --label org.opencontainers.image.created=${{ steps.prep.outputs.created }} \
             --label org.opencontainers.image.revision=${{ github.sha }}
 
           docker push ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.GIT_TAG }}
