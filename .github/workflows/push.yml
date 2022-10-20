@@ -14,3 +14,33 @@
 #       - name: Checkout
 #         uses: actions/checkout@v3
 
+#       - name: Generate Tag
+#         id: generate_tag
+#         uses: anothrNick/github-tag-action@1.26.0
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.ECM3440_GITHUB_TOKEN }}
+#           WITH_V: true
+#           DEFAULT_BUMP: patch
+#           DRY_RUN: true
+
+#       - name: Login to Docker Hub
+#         uses: azure/docker-login@v1
+#         with:
+#           login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+#           username: ${{ secrets.REGISTRY_USERNAME }}
+#           password: ${{ secrets.REGISTRY_PASSWORD }}
+
+#       - name: Generate image repository path
+#         id: image_repository_op
+#         run: |
+#           echo IMAGE_REPOSITORY=$(echo ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+
+#       - name: Build and push image
+#         run: |
+#           docker build . -t ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.GIT_TAG }} \
+#            --build-arg SERVICEBUS_CONNECTION_STR="${{ secrets.SERVICEBUS_CONNECTION_STR }}" \
+#            --build-arg SERVICEBUS_TOPIC_NAME="${{ secrets.SERVICEBUS_TOPIC_NAME }}" \
+#            --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}"
+
+#           docker push ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.GIT_TAG }}
+
