@@ -171,6 +171,6 @@ jobs:
         with:
           manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
           images: |
-            ${{ env.IMAGE_REPOSITORY }}:${{ needs.build.outputs.imageTag }}
+            ${{ needs.build.outputs.imageRepository }}:${{ needs.build.outputs.imageTag }}
           imagepullsecrets: |
             ${{ env.IMAGE_PULL_SECRET_NAME }}
