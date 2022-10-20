@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: event-receiver
+  name: ${SERVICE_NAME}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: event-receiver
+      app: ${SERVICE_NAME}
   template:
     metadata:
       labels:
-        app: event-receiver
+        app: ${SERVICE_NAME}
     spec:
       containers:
-        - name: event-receiver
-          image: groupassignmentregistry.azurecr.io/event-receiver:${IMAGE_TAG}
+        - name: ${SERVICE_NAME}
+          image: ${IMAGE_REPOSITORY}:${IMAGE_TAG}
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -29,11 +29,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: event-receiver
+  name: ${SERVICE_NAME}
 spec:
   type: ClusterIP
   selector:
-    app: event-receiver
+    app: ${SERVICE_NAME}
   ports:
     - port: 80
       targetPort: 8080
@@ -42,19 +42,19 @@ spec:
 kind: Ingress
 apiVersion: networking.k8s.io/v1
 metadata:
-  name: event-receiver
+  name: ${SERVICE_NAME}
   annotations:
     kubernetes.io/ingress.class: addon-http-application-routing
     appgw.ingress.kubernetes.io/use-private-ip: "false"
 spec:
   rules:
-    - host: event-receiver.1ebc354abe5745168776.ukwest.aksapp.io
+    - host: ${SERVICE_NAME}.${INGRESS_DNS}
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: event-receiver
+                name: ${SERVICE_NAME}
                 port:
                   number: 80

@@ -154,13 +154,16 @@ jobs:
           resource-group: ${{ env.RESOURCE_GROUP }}
           cluster-name: ${{ env.CLUSTER_NAME }}
 
-      - name: Inject environment variable
+      - name: Inject environment variables to deployment
         uses: swdotcom/update-and-apply-kubernetes-configs@v1
         with:
           k8-config-file-paths: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
           replacement-method: defined
         env:
+          SERVICE_NAME: ${{ github.repository }}
+          IMAGE_REPOSITORY: ${{ env.IMAGE_REPOSITORY }}
           IMAGE_TAG: ${{ needs.build.outputs.imageTag }}
+          INGRESS_DNS: ${{ secrets.INGRESS_DNS }}
 
       # Deploys application based on given manifest file
       - name: Deploys application
