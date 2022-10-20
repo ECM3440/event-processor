@@ -162,7 +162,7 @@ jobs:
           replacement-method: defined
         env:
           SERVICE_NAME: ${{ github.event.repository.name }}
-          IMAGE_REPOSITORY: ${{ needs.build.outputs.imageRepository }}
+          IMAGE_REPOSITORY: ${{ needs.build.output.imageRepository }}
           IMAGE_TAG: ${{ needs.build.outputs.imageTag }}
 
       # Deploys application based on given manifest file
