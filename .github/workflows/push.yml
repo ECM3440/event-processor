@@ -46,7 +46,7 @@ jobs:
         id: image_repository_op
         run: |
           echo IMAGE_REPOSITORY=$(echo ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
-          echo "IMAGE_REPOSITORY=charlie" >> $GITHUB_OUTPUT
+          echo "IMAGE_REPOSITORY=$(echo ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Build and push image
         run: |
@@ -54,8 +54,8 @@ jobs:
            --build-arg SERVICEBUS_CONNECTION_STR="${{ secrets.SERVICEBUS_CONNECTION_STR }}" \
            --build-arg SERVICEBUS_TOPIC_NAME="${{ secrets.SERVICEBUS_TOPIC_NAME }}" \
            --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}" \
-            --label org.opencontainers.image.source=${{ github.event.repository.clone_url }} \
-            --label org.opencontainers.image.revision=${{ github.sha }}
+           --label org.opencontainers.image.source=${{ github.event.repository.clone_url }} \
+           --label org.opencontainers.image.revision=${{ github.sha }}
 
           docker push ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.new_tag }}
 
