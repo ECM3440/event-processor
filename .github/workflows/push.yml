@@ -20,7 +20,7 @@ jobs:
 
     outputs:
       imageTag: ${{ steps.generate_tag.outputs.new_tag }}
-      imageRepository: ${{ env.IMAGE_REPOSITORY }}
+      imageRepository: ${{ steps.image_repository_op.outputs.IMAGE_REPOSITORY }}
 
     steps:
       - name: Checkout
@@ -45,7 +45,7 @@ jobs:
       - name: Generate image repository path
         id: image_repository_op
         run: |
-          echo IMAGE_REPOSITORY=$(echo ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV $GITHUB_OUTPUT
+          echo IMAGE_REPOSITORY=$(echo ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ github.repository }} | tr '[:upper:]' '[:lower:]') | tee $GITHUB_ENV $GITHUB_OUTPUT
 
       - name: Build and push image
         run: |
