@@ -1,7 +1,7 @@
 name: Push
 
 on:
-  pull_request:
+  push:
     branches:
       - "main"
 
@@ -14,9 +14,53 @@ env:
   DEPLOYMENT_MANIFEST_PATH: "deployment.yml"
 
 jobs:
+  run-linters:
+    name: Run linters
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+
+      - name: Install Python dependencies
+        run: pip install black
+
+      - name: Run linters
+        uses: wearerequired/lint-action@v2
+        with:
+          black: true
+
+  run-tests:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Test with pytest
+        run: |
+          pip install pytest
+          pip install pytest-cov
+          pip install mock
+          pip install pytest-httpserver
+          python -m pytest --cov-config=.coveragerc --cov=. --exitfirst --verbose --failed-first --cov-fail-under=70
+
   build:
     runs-on: ubuntu-latest
     if: "! contains(toJSON(github.event.commits.*.message), '[skip-ci]')"
+
+    needs: [run-tests, run-linters]
 
     outputs:
       imageTag: ${{ steps.generate_tag.outputs.new_tag }}
@@ -30,7 +74,7 @@ jobs:
         id: generate_tag
         uses: anothrNick/github-tag-action@1.52.0
         env:
-          GITHUB_TOKEN: ${{ secrets.ECM3440_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ECM3440_GITHUB_TOKEN }}a
           WITH_V: true
           DEFAULT_BUMP: patch
           DRY_RUN: true
@@ -83,9 +127,11 @@ jobs:
           message: "@${{ github.actor }} Yikes! You better fix it before anyone else finds out! [Build](https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }}/checks) has Failed!"
           allow-repeats: false
 
-  createSecret:
+  create-secret:
     runs-on: ubuntu-latest
     if: "! contains(toJSON(github.event.commits.*.message), '[pre-release]')"
+
+    needs: [run-tests, run-linters]
 
     permissions:
       actions: read
@@ -136,7 +182,7 @@ jobs:
       contents: read
       id-token: write
 
-    needs: [build, createSecret]
+    needs: [build, create-secret]
 
     steps:
       # Checks out the repository this file is in
@@ -172,6 +218,6 @@ jobs:
         with:
           manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
           images: |
-            groupassignmentregistry.azurecr.io/ecm3440/event-processor:${{ needs.build.outputs.imageTag }}
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/ecm3440/event-processor:${{ needs.build.outputs.imageTag }}
           imagepullsecrets: |
             ${{ env.IMAGE_PULL_SECRET_NAME }}
