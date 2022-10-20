@@ -6,12 +6,7 @@ on:
       - "main"
 
 env:
-  AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
-  CONTAINER_NAME: "event-receiver"
-  RESOURCE_GROUP: ${{ secrets.RESOURCE_GROUP }}
-  CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
-  IMAGE_PULL_SECRET_NAME: ${{ secrets.IMAGE_PULL_SECRET_NAME }}
-  DEPLOYMENT_MANIFEST_PATH: "deployment.yml"
+  DOCKER_FILE_PATH: Dockerfile
 
 jobs:
   build:
@@ -46,7 +41,7 @@ jobs:
 
       - name: Build and push image
         run: |
-          docker build . -t ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.GIT_TAG }} --build-arg SERVICEBUS_CONNECTION_STR="${{ secrets.SERVICEBUS_CONNECTION_STR }}" --build-arg SERVICEBUS_TOPIC_NAME="${{ secrets.SERVICEBUS_TOPIC_NAME }}" --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}"
+          docker build ${{ env.DOCKER_FILE_PATH }} -t ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.GIT_TAG }} --build-arg SERVICEBUS_CONNECTION_STR="${{ secrets.SERVICEBUS_CONNECTION_STR }}" --build-arg SERVICEBUS_TOPIC_NAME="${{ secrets.SERVICEBUS_TOPIC_NAME }}" --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}"
           docker push ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.GIT_TAG }}
 
       - name: Comment on PR
