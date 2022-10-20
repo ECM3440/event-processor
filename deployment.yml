@@ -48,7 +48,7 @@ metadata:
     appgw.ingress.kubernetes.io/use-private-ip: "false"
 spec:
   rules:
-    - host: ${SERVICE_NAME}.${INGRESS_DNS}
+    - host: ${SERVICE_NAME}.1ebc354abe5745168776.ukwest.aksapp.io
       http:
         paths:
           - path: /

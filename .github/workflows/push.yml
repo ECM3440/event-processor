@@ -20,6 +20,7 @@ jobs:
 
     outputs:
       imageTag: ${{ steps.generate_tag.outputs.new_tag }}
+      imageRepository: ${{ env.IMAGE_REPOSITORY }}
 
     steps:
       - name: Checkout
@@ -161,9 +162,8 @@ jobs:
           replacement-method: defined
         env:
           SERVICE_NAME: ${{ github.event.repository.name }}
-          IMAGE_REPOSITORY: ${{ env.IMAGE_REPOSITORY }}
+          IMAGE_REPOSITORY: ${{ needs.build.outputs.imageRepository }}
           IMAGE_TAG: ${{ needs.build.outputs.imageTag }}
-          INGRESS_DNS: ${{ secrets.INGRESS_DNS }}
 
       # Deploys application based on given manifest file
       - name: Deploys application
