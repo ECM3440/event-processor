@@ -160,7 +160,7 @@ jobs:
           k8-config-file-paths: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
           replacement-method: defined
         env:
-          SERVICE_NAME: ${{ github.repository }}
+          SERVICE_NAME: ${{ github.event.repository.name }}
           IMAGE_REPOSITORY: ${{ env.IMAGE_REPOSITORY }}
           IMAGE_TAG: ${{ needs.build.outputs.imageTag }}
           INGRESS_DNS: ${{ secrets.INGRESS_DNS }}
