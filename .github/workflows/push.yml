@@ -1,37 +1,9 @@
-# This workflow will build and push an application to a Azure Kubernetes Service (AKS) cluster when you push your code
-#
-# This workflow assumes you have already created the target AKS cluster and have created an Azure Container Registry (ACR)
-# For instructions see:
-#   - https://docs.microsoft.com/en-us/azure/aks/kubernetes-walkthrough-portal
-#   - https://docs.microsoft.com/en-us/azure/container-registry/container-registry-get-started-portal
-#   - https://github.com/Azure/aks-create-action
-#
-# To configure this workflow:
-#
-# 1. Set the following secrets in your repository (instructions for getting these can be found at https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-cli%2Clinux):
-#    - AZURE_CLIENT_ID
-#    - AZURE_TENANT_ID
-#    - AZURE_SUBSCRIPTION_ID
-#
-# 2. Set the following environment variables (or replace the values below):
-#    - AZURE_CONTAINER_REGISTRY (name of your container registry / ACR)
-#    - RESOURCE_GROUP (where your cluster is deployed)
-#    - CLUSTER_NAME (name of your AKS cluster)
-#    - CONTAINER_NAME (name of the container image you would like to push up to your ACR)
-#    - IMAGE_PULL_SECRET_NAME (name of the ImagePullSecret that will be created to pull your ACR image)
-#    - DEPLOYMENT_MANIFEST_PATH (path to the manifest yaml for your deployment)
-#
-# For more information on GitHub Actions for Azure, refer to https://github.com/Azure/Actions
-# For more samples to get started with GitHub Action workflows to deploy to Azure, refer to https://github.com/Azure/actions-workflow-samples
-# For more options with the actions used below please refer to https://github.com/Azure/login
-
-name: Build and deploy an app to AKS
+name: Push
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
-  workflow_dispatch:
+      - "main"
 
 env:
   AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
@@ -42,7 +14,29 @@ env:
   DEPLOYMENT_MANIFEST_PATH: "deployment.yml"
 
 jobs:
-  runTests:
+  run-linters:
+    name: Run linters
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+
+      - name: Install Python dependencies
+        run: pip install black
+
+      - name: Run linters
+        uses: wearerequired/lint-action@v2
+        with:
+          black: true
+
+  run-tests:
+    name: Run tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -59,49 +53,91 @@ jobs:
           pip install pytest
           pip install pytest-cov
           pip install mock
-          python -m pytest --junitxml=test-results-${{ github.sha }}.xml --exitfirst --verbose --failed-first --cov=. --cov-report xml
+          pip install pytest-httpserver
+          python -m pytest --cov-config=.coveragerc --cov=. --exitfirst --verbose --failed-first --cov-fail-under=70
 
-      - name: Upload pytest test results
-        uses: actions/upload-artifact@v3
-        with:
-          name: pytest-results-${{ github.sha }}
-          path: test-results-${{ github.sha }}.xml
-        # Use always() to always run this step to publish test results when there are test failures
-        if: ${{ always() }}
-
-      - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          junitxml-path: ./test-results-${{ github.sha }}.xml
-
-  buildImage:
-    permissions:
-      contents: read
-      id-token: write
+  build:
     runs-on: ubuntu-latest
-    needs: runTests
+    if: "! contains(toJSON(github.event.commits.*.message), '[skip-ci]')"
+
+    needs: [run-tests, run-linters]
+
+    outputs:
+      imageTag: ${{ steps.generate_tag.outputs.new_tag }}
+      imageRepository: ${{ steps.image_repository_op.outputs.image_repository }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Generate Tag
+        id: generate_tag
+        uses: anothrNick/github-tag-action@1.52.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.ECM3440_GITHUB_TOKEN }}a
+          WITH_V: true
+          DEFAULT_BUMP: patch
+          DRY_RUN: true
+
       - name: Login to Docker Hub
         uses: azure/docker-login@v1
         with:
           login-server: ${{ secrets.REGISTRY_LOGIN_SERVER }}
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-      - name: Set variables
-        run: echo "BUILD_DATE=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Generate image repository path
+        id: image_repository_op
+        run: |
+          echo IMAGE_REPOSITORY=$(echo ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ github.repository }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+          echo "image_repository=$IMAGE_REPOSITORY" >> $GITHUB_OUTPUT
+
       - name: Build and push image
         run: |
-          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/event-receiver:${{ github.sha }} --build-arg SERVICEBUS_CONNECTION_STR="${{ secrets.SERVICEBUS_CONNECTION_STR }}" --build-arg SERVICEBUS_TOPIC_NAME="${{ secrets.SERVICEBUS_TOPIC_NAME }}" --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}"
-          docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/event-receiver:${{ github.sha }}
+          docker build . -t ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.new_tag }} \
+           --build-arg SERVICEBUS_CONNECTION_STR="${{ secrets.SERVICEBUS_CONNECTION_STR }}" \
+           --build-arg SERVICEBUS_TOPIC_NAME="${{ secrets.SERVICEBUS_TOPIC_NAME }}" \
+           --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}" \
+           --label org.opencontainers.image.source=${{ github.event.repository.clone_url }} \
+           --label org.opencontainers.image.revision=${{ github.sha }}
 
-  createSecret:
+          docker push ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.new_tag }}
+
+      - name: Comment on PR
+        uses: mshick/add-pr-comment@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.ECM3440_GITHUB_TOKEN }}
+        with:
+          message: "@${{ github.actor }} Image is available for testing. `docker pull ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.new_tag }}`"
+          allow-repeats: false
+
+      - name: Push Latest Tag
+        uses: anothrNick/github-tag-action@1.52.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.ECM3440_GITHUB_TOKEN }}
+          WITH_V: true
+          DEFAULT_BUMP: patch
+
+      - name: Notify Failure
+        if: failure()
+        uses: mshick/add-pr-comment@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.ECM3440_GITHUB_TOKEN }}
+        with:
+          message: "@${{ github.actor }} Yikes! You better fix it before anyone else finds out! [Build](https://github.com/${{ github.repository }}/commit/${{ github.event.pull_request.head.sha }}/checks) has Failed!"
+          allow-repeats: false
+
+  create-secret:
+    runs-on: ubuntu-latest
+    if: "! contains(toJSON(github.event.commits.*.message), '[pre-release]')"
+
+    needs: [run-tests, run-linters]
+
     permissions:
+      actions: read
       contents: read
       id-token: write
-    runs-on: ubuntu-latest
-    needs: runTests
+
     steps:
       # Logs in with your Azure credentials
       - name: Azure login
@@ -118,6 +154,7 @@ jobs:
 
       # Retrieves the credentials for pulling images from your Azure Container Registry
       - name: Get ACR credentials
+        id: get-acr-creds
         run: |
           az acr update -n ${{ env.AZURE_CONTAINER_REGISTRY }} -g ${{ env.RESOURCE_GROUP }} --admin-enabled true
           ACR_USERNAME=$(az acr credential show -g ${{ env.RESOURCE_GROUP }} -n ${{ env.AZURE_CONTAINER_REGISTRY }} --query username -o tsv)
@@ -126,7 +163,6 @@ jobs:
           echo "::set-output name=username::${ACR_USERNAME}"
           echo "::add-mask::${ACR_PASSWORD}"
           echo "::set-output name=password::${ACR_PASSWORD}"
-        id: get-acr-creds
 
       # Creates a kubernetes secret on your Azure Kubernetes Service cluster that matches up to the credentials from the last step
       - name: Create K8s secret for pulling image from ACR
@@ -138,15 +174,20 @@ jobs:
           secret-name: ${{ env.IMAGE_PULL_SECRET_NAME }}
 
   deploy:
+    runs-on: ubuntu-latest
+    if: "! contains(toJSON(github.event.commits.*.message), '[pre-release]')"
+
     permissions:
       actions: read
       contents: read
       id-token: write
-    runs-on: ubuntu-latest
-    needs: [buildImage, createSecret]
+
+    needs: [build, create-secret]
+
     steps:
       # Checks out the repository this file is in
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
       # Logs in with your Azure credentials
       - name: Azure login
@@ -161,13 +202,15 @@ jobs:
           resource-group: ${{ env.RESOURCE_GROUP }}
           cluster-name: ${{ env.CLUSTER_NAME }}
 
-      - name: Inject environment variable
+      - name: Inject environment variables to deployment
         uses: swdotcom/update-and-apply-kubernetes-configs@v1
         with:
           k8-config-file-paths: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
           replacement-method: defined
         env:
-          IMAGE_TAG: ${{ github.sha }}
+          SERVICE_NAME: ${{ github.event.repository.name }}
+          IMAGE_REPOSITORY: ${{ needs.build.outputs.imageRepository }}
+          IMAGE_TAG: ${{ needs.build.outputs.imageTag }}
 
       # Deploys application based on given manifest file
       - name: Deploys application
@@ -175,6 +218,6 @@ jobs:
         with:
           manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
           images: |
-            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.CONTAINER_NAME }}:${{ github.sha }}
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/ecm3440/event-processor:${{ needs.build.outputs.imageTag }}
           imagepullsecrets: |
             ${{ env.IMAGE_PULL_SECRET_NAME }}
