@@ -93,7 +93,7 @@ jobs:
         run: echo "BUILD_DATE=$(date +%s)" >> $GITHUB_ENV
       - name: Build and push image
         run: |
-          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/event-receiver:${{ github.sha }} --build-arg SERVICEBUS_CONNECTION_STR="${{ secrets.SERVICEBUS_CONNECTION_STR }}" --build-arg SERVICEBUS_TOPIC_NAME="${{ secrets.SERVICEBUS_TOPIC_NAME }}" --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}"
+          docker build . -t ${{ secrets.REGISTRY_LOGIN_SERVER }}/event-receiver:${{ github.sha }} --build-arg SERVICEBUS_CONNECTION_STR="${{ secrets.SERVICEBUS_CONNECTION_STR }}" --build-arg SERVICEBUS_SENSOR_TOPIC="${{ secrets.SERVICEBUS_SENSOR_TOPIC }}" --build-arg SERVICEBUS_ACTUATOR_TOPIC="${{ secrets.SERVICEBUS_ACTUATOR_TOPIC }}" --build-arg SERVICEBUS_SUBSCRIPTION_NAME="${{ secrets.SERVICEBUS_SUBSCRIPTION_NAME }}"
           docker push ${{ secrets.REGISTRY_LOGIN_SERVER }}/event-receiver:${{ github.sha }}
 
   createSecret:
