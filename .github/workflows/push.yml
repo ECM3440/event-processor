@@ -18,6 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     if: "! contains(toJSON(github.event.commits.*.message), '[skip-ci]')"
 
+    outputs:
+      imageTag: ${{ steps.generate_tag.outputs.new_tag }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -157,7 +160,7 @@ jobs:
           k8-config-file-paths: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
           replacement-method: defined
         env:
-          IMAGE_TAG: ${{ steps.generate_tag.outputs.new_tag }}
+          IMAGE_TAG: ${{ needs.build.outputs.imageTag }}
 
       # Deploys application based on given manifest file
       - name: Deploys application
@@ -165,6 +168,6 @@ jobs:
         with:
           manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
           images: |
-            ${{ env.IMAGE_REPOSITORY }}:${{ steps.generate_tag.outputs.new_tag }}
+            ${{ env.IMAGE_REPOSITORY }}:${{ needs.build.output.imageTag }}
           imagepullsecrets: |
             ${{ env.IMAGE_PULL_SECRET_NAME }}
