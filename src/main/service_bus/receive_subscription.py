@@ -1,7 +1,8 @@
+import time
 import json
 import logging
 from typing import Any, Dict, List
-from azure.servicebus import ServiceBusClient
+from azure.servicebus import ServiceBusClient, ServiceBusReceiver
 
 
 def consume_service_bus(
@@ -28,14 +29,18 @@ def consume_service_bus(
 
     logging.info("Consuming events")
 
-    with servicebus_client:
-        receiver = servicebus_client.get_subscription_receiver(
-            topic_name=topic_name, subscription_name=subscription_name
-        )
-        with receiver:
-            received_msgs = receiver.receive_messages(max_message_count=10000000)
-            for msg in received_msgs:
-                logging.info("message received: {}".format(str(msg)))
-                nmsg = json.loads(str(msg))
-                sensor_readings.append(nmsg)
-                receiver.complete_message(msg)
+    while True:
+        with servicebus_client:
+            receiver = servicebus_client.get_subscription_receiver(
+                topic_name=topic_name, subscription_name=subscription_name
+            )
+            with receiver:
+                received_msgs = receiver.receive_messages(
+                    max_message_count=5, max_wait_time=10
+                )
+                for msg in received_msgs:
+                    logging.info("message received: {}".format(str(msg)))
+                    nmsg = json.loads(str(msg))
+                    sensor_readings.append(nmsg)
+                    receiver.complete_message(msg)
+        time.sleep(10)

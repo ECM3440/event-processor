@@ -22,7 +22,10 @@ def run() -> None:
     if "profile" not in args:
         raise Exception("profile flag must be set")
 
-    parsed_profile = args.profile.pop()
+    parsed_profile = args.profile
+
+    if parsed_profile != "dev":
+        parsed_profile = args.profile.pop()
 
     if parsed_profile != "dev":
         if parsed_profile != "prod":
@@ -31,6 +34,7 @@ def run() -> None:
     setting_setup(parsed_profile)
 
     sensor_readings = []
+    actuator_readings = []
 
     logging.basicConfig(level=logging.INFO)
 
@@ -38,6 +42,7 @@ def run() -> None:
         server_setting.host_name,
         server_setting.port,
         sensor_readings,
+        actuator_readings,
     )
 
     logging.info(
@@ -46,21 +51,39 @@ def run() -> None:
     )
 
     try:
-        thread = Thread(target=server.start)
-        thread.start()
+        server_thread = Thread(target=server.start)
+        server_thread.start()
     except KeyboardInterrupt:
         server.close()
         logging.info("Server stopped")
 
     try:
+        sensor_thread = Thread(
+            target=consume_service_bus,
+            args=(
+                os.environ["SERVICEBUS_CONNECTION_STR"],
+                os.environ["SERVICEBUS_SENSOR_TOPIC"],
+                os.environ["SERVICEBUS_SUBSCRIPTION_NAME"],
+                sensor_readings,
+            ),
+        )
+        sensor_thread.start()
+    except Exception:
+        logging.error(
+            "Couldn't consume messages from the service bus on the sensor topic"
+        )
+
+    try:
         consume_service_bus(
             connection_str=os.environ["SERVICEBUS_CONNECTION_STR"],
-            topic_name=os.environ["SERVICEBUS_TOPIC_NAME"],
+            topic_name=os.environ["SERVICEBUS_ACTUATOR_TOPIC"],
             subscription_name=os.environ["SERVICEBUS_SUBSCRIPTION_NAME"],
-            sensor_readings=sensor_readings,
+            sensor_readings=actuator_readings,
         )
     except Exception:
-        logging.error("Couldn't consume messages from the service bus")
+        logging.error(
+            "Couldn't consume messages from the service bus on the actuator topic"
+        )
 
 
 if __name__ == "__main__":
