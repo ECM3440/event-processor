@@ -8,7 +8,8 @@ on:
 env:
   AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
   RESOURCE_GROUP: ${{ secrets.RESOURCE_GROUP }}
-  CLUSTER_NAME: "groupassignmentaks_staging"
+  STAGING_CLUSTER_NAME: ${{ secrets.STAGING_CLUSTER_NAME }}
+  PRODUCTION_CLUSTER_NAME: ${{ secrets.PRODUCTION_CLUSTER_NAME }}
   IMAGE_PULL_SECRET_NAME: ${{ secrets.IMAGE_PULL_SECRET_NAME }}
   DEPLOYMENT_MANIFEST_PATH: "deployment.yml"
 
@@ -149,7 +150,7 @@ jobs:
         uses: azure/aks-set-context@v2.0
         with:
           resource-group: ${{ env.RESOURCE_GROUP }}
-          cluster-name: ${{ env.CLUSTER_NAME }}
+          cluster-name: ${{ env.STAGING_CLUSTER_NAME }}
 
       # Retrieves the credentials for pulling images from your Azure Container Registry
       - name: Get ACR credentials
@@ -172,7 +173,7 @@ jobs:
           container-registry-password: ${{ steps.get-acr-creds.outputs.password }}
           secret-name: ${{ env.IMAGE_PULL_SECRET_NAME }}
 
-  deploy:
+  deploy-staging:
     runs-on: ubuntu-latest
     if: "! contains(toJSON(github.event.commits.*.message), '[pre-release]')"
 
@@ -199,7 +200,63 @@ jobs:
         uses: azure/aks-set-context@v2.0
         with:
           resource-group: ${{ env.RESOURCE_GROUP }}
-          cluster-name: ${{ env.CLUSTER_NAME }}
+          cluster-name: ${{ env.STAGING_CLUSTER_NAME }}
+
+      - name: Inject environment variables to deployment
+        uses: swdotcom/update-and-apply-kubernetes-configs@v1
+        with:
+          k8-config-file-paths: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+          replacement-method: defined
+        env:
+          SERVICE_NAME: ${{ github.event.repository.name }}
+          IMAGE_REPOSITORY: ${{ needs.build.outputs.imageRepository }}
+          IMAGE_TAG: ${{ needs.build.outputs.imageTag }}
+
+      # Deploys application based on given manifest file
+      - name: Deploys application
+        uses: Azure/k8s-deploy@v4
+        with:
+          manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+          images: |
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/ecm3440/event-processor:${{ needs.build.outputs.imageTag }}
+          imagepullsecrets: |
+            ${{ env.IMAGE_PULL_SECRET_NAME }}
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    if: "! contains(toJSON(github.event.commits.*.message), '[pre-release]')"
+
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+
+    needs: [deploy-staging]
+
+    steps:
+      - uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.ECM3440_GITHUB_TOKEN }}
+          approvers: charlie2clarke,Ben-Newman-Exeter
+          minimum-approvals: 1
+          issue-title: "Deploying ${{ needs.build.outputs.imageTag }} to prod from staging"
+
+      # Checks out the repository this file is in
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Logs in with your Azure credentials
+      - name: Azure login
+        uses: azure/login@v1.4.3
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Retrieves your Azure Kubernetes Service cluster's kubeconfig file
+      - name: Get K8s context
+        uses: azure/aks-set-context@v2.0
+        with:
+          resource-group: ${{ env.RESOURCE_GROUP }}
+          cluster-name: ${{ env.PRODUCTION_CLUSTER_NAME }}
 
       - name: Inject environment variables to deployment
         uses: swdotcom/update-and-apply-kubernetes-configs@v1
