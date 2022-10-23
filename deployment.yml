@@ -48,7 +48,7 @@ metadata:
     appgw.ingress.kubernetes.io/use-private-ip: "false"
 spec:
   rules:
-    - host: event-processor${INGRESS_HOST}.1ebc354abe5745168776.ukwest.aksapp.io
+    - host: event-processor.1ebc354abe5745168776.ukwest.aksapp.io
       http:
         paths:
           - path: /
