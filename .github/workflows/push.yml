@@ -11,7 +11,8 @@ env:
   STAGING_CLUSTER_NAME: ${{ secrets.STAGING_CLUSTER_NAME }}
   PRODUCTION_CLUSTER_NAME: ${{ secrets.PRODUCTION_CLUSTER_NAME }}
   IMAGE_PULL_SECRET_NAME: ${{ secrets.IMAGE_PULL_SECRET_NAME }}
-  DEPLOYMENT_MANIFEST_PATH: "deployment.yml"
+  STAGING_DEPLOYMENT_MANIFEST_PATH: "deployment/deployment-staging.yml"
+  PRODUCTION_DEPLOYMENT_MANIFEST_PATH: "deployment/deployment-production.yml"
 
 jobs:
   run-linters:
@@ -205,7 +206,7 @@ jobs:
       - name: Inject environment variables to deployment
         uses: swdotcom/update-and-apply-kubernetes-configs@v1
         with:
-          k8-config-file-paths: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+          k8-config-file-paths: ${{ env.STAGING_DEPLOYMENT_MANIFEST_PATH }}
           replacement-method: defined
         env:
           SERVICE_NAME: ${{ github.event.repository.name }}
@@ -216,7 +217,7 @@ jobs:
       - name: Deploys application
         uses: Azure/k8s-deploy@v4
         with:
-          manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+          manifests: ${{ env.STAGING_DEPLOYMENT_MANIFEST_PATH }}
           images: |
             ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/ecm3440/event-processor:${{ needs.build.outputs.imageTag }}
           imagepullsecrets: |
@@ -261,7 +262,7 @@ jobs:
       - name: Inject environment variables to deployment
         uses: swdotcom/update-and-apply-kubernetes-configs@v1
         with:
-          k8-config-file-paths: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+          k8-config-file-paths: ${{ env.PRODUCTION_DEPLOYMENT_MANIFEST_PATH }}
           replacement-method: defined
         env:
           SERVICE_NAME: ${{ github.event.repository.name }}
@@ -272,7 +273,7 @@ jobs:
       - name: Deploys application
         uses: Azure/k8s-deploy@v4
         with:
-          manifests: ${{ env.DEPLOYMENT_MANIFEST_PATH }}
+          manifests: ${{ env.PRODUCTION_DEPLOYMENT_MANIFEST_PATH }}
           images: |
             ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/ecm3440/event-processor:${{ needs.build.outputs.imageTag }}
           imagepullsecrets: |
