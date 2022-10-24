@@ -26,7 +26,7 @@ class SensorHandlerServer(BaseHTTPRequestHandler):
     sensor_readings = []
     actuator_readings = []
 
-    def _set_response(self):
+    def _set_response_success(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Credentials", "true")
@@ -34,11 +34,17 @@ class SensorHandlerServer(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        if self.path != "/favicon.ico":
-            self._set_response()
-            if self.path == "/sensors":
-                response = json.dumps(SensorHandlerServer.sensor_readings)
-            elif self.path == "/actuators":
-                response = json.dumps(SensorHandlerServer.actuator_readings)
-            response = bytes(response, "utf-8")
-            self.wfile.write(response)
+        if self.path == "/favicon.ico":
+            self._set_response_success()
+        else:
+            split_path = self.path.split("/")[1::]
+            api_version = split_path[1]
+
+            if api_version == "v1":
+                if split_path[-1] == "sensors":
+                    response = json.dumps(SensorHandlerServer.sensor_readings)
+                elif split_path[-1] == "actuators":
+                    response = json.dumps(SensorHandlerServer.actuator_readings)
+                self._set_response_success()
+                response = bytes(response, "utf-8")
+                self.wfile.write(response)
