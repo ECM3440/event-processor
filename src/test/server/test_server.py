@@ -24,7 +24,7 @@ def test_server():
     thread.daemon = True
     thread.start()
 
-    sensor_url = "http://localhost:8082/sensors"
+    sensor_url = "http://localhost:8082/api/v1/sensors"
 
     sensor_res = requests.request("GET", sensor_url, headers={}, data={})
 
@@ -34,7 +34,7 @@ def test_server():
     assert time_key == "test_time"
     assert sensor_json[0][time_key] == {"sensor": 18}
 
-    actuator_url = "http://localhost:8082/actuators"
+    actuator_url = "http://localhost:8082/api/v1/actuators"
 
     actuator_res = requests.request("GET", actuator_url, headers={}, data={})
     actuator_json = actuator_res.json()
