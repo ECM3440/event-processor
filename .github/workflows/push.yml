@@ -177,6 +177,10 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     if: "! contains(toJSON(github.event.commits.*.message), '[pre-release]')"
+    
+    outputs:
+      imageTag: ${{ steps.generate_tag.outputs.image_tag }}
+      imageRepository: ${{ steps.generate_image_repository.image_repository }}
 
     permissions:
       actions: read
@@ -222,6 +226,16 @@ jobs:
             ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/ecm3440/event-processor:${{ needs.build.outputs.imageTag }}
           imagepullsecrets: |
             ${{ env.IMAGE_PULL_SECRET_NAME }}
+            
+      - name: Set image tag output
+        id: generate_tag
+        run: |
+          echo "image_tag=${{ needs.build.outputs.imageTag }}" >> $GITHUB_OUTPUT
+          
+      - name: Set image tag output
+        id: generate_image_repository
+        run: |
+          echo "image_repository=${{ needs.build.outputs.imageRepository }}" >> $GITHUB_OUTPUT
 
   deploy-production:
     runs-on: ubuntu-latest
@@ -240,7 +254,7 @@ jobs:
           secret: ${{ secrets.ECM3440_GITHUB_TOKEN }}
           approvers: charlie2clarke,Ben-Newman-Exeter
           minimum-approvals: 1
-          issue-title: "Deploying ${{ needs.build.outputs.imageTag }} to prod from staging"
+          issue-title: "Deploying ${{ needs.deploy-staging.outputs.imageTag }} to prod from staging"
 
       # Checks out the repository this file is in
       - name: Checkout
@@ -266,8 +280,8 @@ jobs:
           replacement-method: defined
         env:
           SERVICE_NAME: ${{ github.event.repository.name }}
-          IMAGE_REPOSITORY: ${{ needs.build.outputs.imageRepository }}
-          IMAGE_TAG: ${{ needs.build.outputs.imageTag }}
+          IMAGE_REPOSITORY: ${{ needs.deploy-staging.outputs.imageRepository }}
+          IMAGE_TAG: ${{ needs.deploy-staging.outputs.imageTag }}
 
       # Deploys application based on given manifest file
       - name: Deploys application
@@ -275,6 +289,6 @@ jobs:
         with:
           manifests: ${{ env.PRODUCTION_DEPLOYMENT_MANIFEST_PATH }}
           images: |
-            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/ecm3440/event-processor:${{ needs.build.outputs.imageTag }}
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/ecm3440/event-processor:${{ needs.deploy-staging.outputs.imageTag }}
           imagepullsecrets: |
             ${{ env.IMAGE_PULL_SECRET_NAME }}
