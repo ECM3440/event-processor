@@ -46,7 +46,7 @@ jobs:
           pip install pytest-cov
           pip install mock
           pip install pytest-httpserver
-          python -m pytest --cov-config=.coveragerc --cov=. --exitfirst --verbose --failed-first --cov-fail-under=70
+          python -m pytest --cov-config=.coveragerc --cov=. --cov-branch --exitfirst --verbose --failed-first --cov-fail-under=70
 
   build:
     runs-on: ubuntu-latest
