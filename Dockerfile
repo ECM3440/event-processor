@@ -16,7 +16,7 @@ COPY requirements.txt requirements.txt
 
 RUN pip3 install -r requirements.txt
 
-COPY . /app
+COPY ./src/main /app
 
 EXPOSE 8080
 CMD [ "python3" , "src/main/app.py", "--profile", "prod"]
