@@ -11,6 +11,7 @@ spec:
     metadata:
       labels:
         app: event-processor
+        version: ${IMAGE_TAG}
     spec:
       containers:
         - name: event-processor
