@@ -232,7 +232,7 @@ jobs:
         run: |
           echo "image_tag=${{ needs.build.outputs.imageTag }}" >> $GITHUB_OUTPUT
           
-      - name: Set image tag output
+      - name: Set image repository output
         id: generate_image_repository
         run: |
           echo "image_repository=${{ needs.build.outputs.imageRepository }}" >> $GITHUB_OUTPUT
