@@ -12,7 +12,7 @@ env:
   PRODUCTION_CLUSTER_NAME: ${{ secrets.PRODUCTION_CLUSTER_NAME }}
   IMAGE_PULL_SECRET_NAME: ${{ secrets.IMAGE_PULL_SECRET_NAME }}
   STAGING_DEPLOYMENT_MANIFEST_PATH: "deployment/deployment-staging.yml"
-  PRODUCTION_DEPLOYMENT_MANIFEST_PATH: "deployment/deployment-production.yml"
+  PRODUCTION_DEPLOYMENT_MANIFEST_PATH: "deployment/deployment-canary.yml"
 
 jobs:
   run-linters:
