@@ -12,6 +12,7 @@ spec:
       labels:
         app: event-processor
         version: ${IMAGE_TAG}
+        env: canary
     spec:
       containers:
         - name: event-processor
