@@ -12,7 +12,7 @@ env:
   PRODUCTION_CLUSTER_NAME: ${{ secrets.PRODUCTION_CLUSTER_NAME }}
   IMAGE_PULL_SECRET_NAME: ${{ secrets.IMAGE_PULL_SECRET_NAME }}
   STAGING_DEPLOYMENT_MANIFEST_PATH: "deployment/deployment-staging.yml"
-  PRODUCTION_DEPLOYMENT_MANIFEST_PATH: "deployment/deployment-production.yml"
+  PRODUCTION_DEPLOYMENT_MANIFEST_PATH: "deployment/deployment-canary.yml"
 
 jobs:
   run-linters:
@@ -232,7 +232,7 @@ jobs:
         run: |
           echo "image_tag=${{ needs.build.outputs.imageTag }}" >> $GITHUB_OUTPUT
           
-      - name: Set image tag output
+      - name: Set image repository output
         id: generate_image_repository
         run: |
           echo "image_repository=${{ needs.build.outputs.imageRepository }}" >> $GITHUB_OUTPUT
