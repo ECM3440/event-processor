@@ -16,7 +16,11 @@ COPY requirements.txt requirements.txt
 
 RUN pip3 install -r requirements.txt
 
-COPY ./src/main /app
+COPY . /app
+RUN pip3 install pytest pytest-cov mock pytest-httpserver
+RUN python -m pytest --cov-config=.coveragerc --cov=. --cov-branch --exitfirst --verbose --failed-first --cov-fail-under=70
+
+RUN rm -rf /app/src/test
 
 EXPOSE 8080
 CMD [ "python3" , "src/main/app.py", "--profile", "prod"]
